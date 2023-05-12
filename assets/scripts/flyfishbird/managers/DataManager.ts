@@ -1,4 +1,4 @@
-import DataDealer from "./DataDealer";
+import DataDealer from "../components/DataDealer";
 
 class DataManager {
 
