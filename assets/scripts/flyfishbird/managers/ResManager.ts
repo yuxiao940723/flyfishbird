@@ -124,7 +124,7 @@ class ResManager {
 
     loadNetResource<T extends cc.Asset>(url: string, options?): Promise<T> {
         if (this.netAssets[url]) {
-            return Promise.resolve(this.netAssets[url]);
+            return Promise.resolve(this.netAssets[url] as T);
         }
         return new Promise<T>((resolve, reject) => {
             let callback = (err: Error, asset: T) => {
