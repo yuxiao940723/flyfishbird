@@ -16,9 +16,9 @@ namespace ffb {
         addToAfterUpdate(fun: Function, frame: number = 0);
 
         /**
-         * 预加载预制，节点在加载完后会被销毁，返回一个Promise对象
-         * @param name 
-         * @param bundle 
+         * 预加载bundle文件夹下的预制，节点在加载完后可能会被销毁，返回一个Promise对象
+         * @param name 预制名
+         * @param bundle 预制所在的bundle
          */
         preLoadPrefab(name: string, bundle?: string): Promise<unknown>;
 
@@ -64,7 +64,7 @@ namespace ffb {
     }
 
     interface DataManager {
-        dealData(node: cc.Node, data: Object, priority: number, async: boolean, dealerKey?: string);
+        dealData(node: cc.Node, data: Object, priority: number, async: boolean, bundleName: string, dealerKey?: string);
         changePriority(node: cc.Node, priority: number);
         destroyDealers(node: cc.Node);
     }
@@ -91,20 +91,20 @@ namespace ffb {
 
         /**
          * 加载bundle的资源，
-         * @param bundleName bundle名
          * @param fold bundle第一级目录文件，通常为类型。clips（动画文件）、res（资源文件）、audio（音频文件）、prefab（预制文件）
          * @param filename fold文件夹下的文件名
+         * @param bundleName bundle名，默认为resources
          * @param type 文件类型
          * @param isPreLoad 是否预加载（注意：当预加载时，返回的就不是cc.Asset类型了）
          */
-        loadResource<T extends cc.Asset>(bundleName: string, fold: string, filename: string, type?: { prototype: T }, isPreLoad?: boolean): Promise<T>;
+        loadResource<T extends cc.Asset>(fold: string, filename: string, bundleName: string, type?: { prototype: T }, isPreLoad?: boolean): Promise<T>;
 
         /**
          * 加载audio文件夹内音频文件,
          * @param audioName 音频文件名
          * @param bundleName bundle名，默认为resources
          */
-        loadAudio(audioName: string, bundleName?: string): Promise<cc.AudioClip>;
+        loadAudio(audioName: string, bundleName: string): Promise<cc.AudioClip>;
 
         /**
          * 加载prefab文件夹内的预制文件并实例化
@@ -112,14 +112,22 @@ namespace ffb {
          * @param bundleName bundle名，默认为resources
          * @param isPreLoad 是否为预加载，默认为false
          */
-        loadAndInstantiatePrefab(prefabName: string, bundleName?: string, isPreLoad?: boolean): Promise<cc.Node>;
+        loadAndInstantiatePrefab(prefabName: string, bundleName: string, isPreLoad?: boolean): Promise<cc.Node>;
 
         /**
          * 加载prefab文件夹内的预制文件
          * @param prefabName 预制名
          * @param bundleName bundle名，默认为resources
          */
-        loadPrefab(prefabName: string, bundleName?: string): Promise<cc.Prefab>;
+        loadPrefab(prefabName: string, bundleName: string): Promise<cc.Prefab>;
+
+        /**
+         * 加载res文件夹内的资源
+         * @param filename 资源文件名
+         * @param bundleName bundle名，默认为resources
+         * @param type 资源类型。可选参数
+         */
+        loadRes<T extends cc.Asset>(filename: string, bundleName: string, type?: { prototype: T }): Promise<T>;
 
         /**
          * 获取 SpriteAtlas 下的 spriteFrame
@@ -127,7 +135,7 @@ namespace ffb {
          * @param filename spriteFrame 名
          * @param bundleName bundle名，默认为resources
          */
-        loadSpriteFrameByAtlas(atlas: string, filename: string, bundleName?: string): Promise<cc.SpriteFrame>;
+        loadSpriteFrameByAtlas(atlas: string, filename: string, bundleName: string): Promise<cc.SpriteFrame>;
 
         /**
          * 是否为网络资源
@@ -181,8 +189,59 @@ namespace ffb {
         getFileName(bundleName: string, uuid: string): string;
     }
 
+    type LabelLike = cc.Component & { string: string };
+    interface LanguageObject {
+        [key: string]: string | number;
+    }
+
+    interface BundleLanguage {
+        [key: string]: LanguageObject;
+    }
+
     interface LangManager {
-        containKey(key: string): boolean;
+        /**
+         * 所在的bundle的文本对象里面是否包含该key
+         * @param key key
+         * @param bundleName 所在的bundle
+         */
+        containKey(key: string, bundleName: string): boolean;
+
+        /**
+         * 设置文本对象
+         * @param language 文本对象
+         * @param bundleName 所在的bundle
+         */
+        setLanguage(language: LanguageObject, bundleName: string);
+
+        /**
+         * 获取文本对象
+         * @param bundleName 所在的bundle
+         */
+        getLaugange(bundleName): LanguageObject;
+
+        /**
+         * 绑定文本对象
+         * @param comp 绑定的组件
+         * @param data 绑定的文本对象
+         * @param bundleName 所在的bundle
+         */
+        bindLanguage(comp: ffb.LabelLike, data: ffb.LanguageObject, bundleName: string);
+
+        /**
+         * 解绑文本对象
+         * @param comp 需要解绑的组件
+         */
+        unBindLanguage(comp: LabelLike);
+
+        /**
+         * 刷新文本对象。如果重设了语言，则需要调用此方法刷新文本对象。
+         */
+        updateLanguage();
+
+        /**
+         * 销毁所有文本对象的绑定
+         */
+        destroyAllBinding();
     }
 
     /**

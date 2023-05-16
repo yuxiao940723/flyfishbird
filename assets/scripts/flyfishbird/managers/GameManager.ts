@@ -88,11 +88,11 @@ class GameManager {
                 }
 
                 if (loading.isPreload) {
-                    await ffb.dataManager.dealData(node, data, DEFAULT_PRIORITY - 1, true);
+                    await ffb.dataManager.dealData(node, data, DEFAULT_PRIORITY - 1, true, bundle);
                     this.destroyNode(node);
                     node = null;
                 } else {
-                    await ffb.dataManager.dealData(node, data, DEFAULT_PRIORITY, false);
+                    await ffb.dataManager.dealData(node, data, DEFAULT_PRIORITY, false, bundle);
                     node.active = true;
                 }
 
@@ -172,11 +172,11 @@ class GameManager {
         this.updateFuns.push({ fun: fun, frame: frame });
     }
 
-    async preLoadPrefab(name: string, bundle?: string) {
+    async preLoadPrefab(name: string, bundle: string = 'resources') {
         return this.waitingPrefabLoadEnd(name, bundle, true, {});
     }
 
-    async setRootLayer(nameOrNode: string | cc.Node, data: object, bundle?: string) {
+    async setRootLayer(nameOrNode: string | cc.Node, data: object, bundle: string = 'resources') {
         let layer: cc.Node;
         if (typeof nameOrNode === 'string') {
             layer = await this.waitingPrefabLoadEnd(nameOrNode, bundle, false, data);
@@ -197,7 +197,7 @@ class GameManager {
         return layer;
     }
 
-    async insertLayer(name: string, data: Object, bundle?: string, index?: number) {
+    async insertLayer(name: string, data: Object, bundle: string = 'resources', index?: number) {
         if (index === undefined) {
             index = this.layers.length;
         } else {

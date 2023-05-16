@@ -50,8 +50,8 @@ class ResManager {
         }
     }
 
-    loadResource<T extends cc.Asset>(bundleName: string, fold: string, filename: string, type?: { prototype: T }, isPreLoad?: boolean): Promise<T> {
-        if (!fold || !bundleName || !filename) {
+    loadResource<T extends cc.Asset>(fold: string, filename: string, bundleName: string = 'resources', type?: { prototype: T }, isPreLoad?: boolean): Promise<T> {
+        if (!fold || !filename) {
             return Promise.resolve(null);
         }
         let bundle = this.bundles[bundleName];
@@ -89,11 +89,11 @@ class ResManager {
         });
     }
 
-    loadAudio(audioName: string, bundleName: string = 'resources') {
+    loadAudio(audioName: string, bundleName: string) {
         return this.loadResource<cc.AudioClip>(bundleName, 'audio', audioName);
     }
 
-    async loadAndInstantiatePrefab(prefabName: string, bundleName: string = 'resources', isPreLoad?: boolean) {
+    async loadAndInstantiatePrefab(prefabName: string, bundleName: string, isPreLoad?: boolean) {
         let prefab: cc.Prefab = await this.loadResource(bundleName, 'prefab', prefabName, cc.Prefab, isPreLoad);
         if (isPreLoad && !(prefab instanceof cc.Prefab)) {
             //预加载返回的是RequestItem[]，并不会返回cc.Prefab，因此需要重新加载一遍
@@ -102,15 +102,15 @@ class ResManager {
         return prefab ? cc.instantiate(prefab) : null;
     }
 
-    loadPrefab(prefabName: string, bundleName: string = 'resources'): Promise<cc.Prefab> {
+    loadPrefab(prefabName: string, bundleName: string): Promise<cc.Prefab> {
         return this.loadResource(bundleName, 'prefab', prefabName);
     }
 
-    loadRes<T extends cc.Asset>(filename: string, bundleName: string = 'resources', type?: { prototype: T }) {
+    loadRes<T extends cc.Asset>(filename: string, bundleName: string, type?: { prototype: T }) {
         return this.loadResource<T>(bundleName, 'res', filename, type);
     }
 
-    async loadSpriteFrameByAtlas(atlas: string, filename: string, bundleName: string = 'resources') {
+    async loadSpriteFrameByAtlas(atlas: string, filename: string, bundleName: string) {
         let spriteAtlas = await this.loadResource(bundleName, 'res', atlas, cc.SpriteAtlas);
         if (!spriteAtlas) {
             return null;
@@ -186,7 +186,7 @@ class ResManager {
         return info.path;
     }
 
-    getBundle(name:string) {
+    getBundle(name: string) {
         return this.bundles[name];
     }
 }

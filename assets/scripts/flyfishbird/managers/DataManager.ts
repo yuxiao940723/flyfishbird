@@ -5,7 +5,7 @@ class DataManager {
     commonData = {};
     nodeTaskTags = {};
 
-    dealData(node: cc.Node, data: Object, priority: number, async: boolean, dealerKey?: string) {
+    dealData(node: cc.Node, data: Object, priority: number, async: boolean, bundleName: string, dealerKey?: string) {
         if (!cc.isValid(node) || typeof data !== 'object') {
             return Promise.resolve();
         }
@@ -24,15 +24,15 @@ class DataManager {
                 }
             }
             progress.count++;
-            this._dealDataToAllChildren(node, priority, data, async, taskTag, progress, dealerKey);
+            this._dealDataToAllChildren(node, priority, data, async, taskTag, progress, dealerKey, bundleName);
             progress.complelteOnce();
         });
     }
 
-    private _dealDataToAllChildren(node: cc.Node, priority: number, data, async: boolean, taskTag: string, asyncLoadProgress, dealerKey: string) {
+    private _dealDataToAllChildren(node: cc.Node, priority: number, data, async: boolean, taskTag: string, asyncLoadProgress, dealerKey: string, bundleName: string) {
         let nodeInData = node.name in data;
         let nodeInCommonData = node.name in this.commonData;
-        let nodeInLanguage = ffb.langManager.containKey(node.name);
+        let nodeInLanguage = ffb.langManager.containKey(node.name, bundleName);
         if (nodeInData || nodeInCommonData || nodeInLanguage) {
             let comp = node.getComponent(DataDealer);
             if (!comp) {
@@ -43,12 +43,12 @@ class DataManager {
                 if (asyncLoadProgress) {
                     asyncLoadProgress.complelteOnce();
                 }
-            });
+            }, bundleName);
         }
         let children = node.children;
         for (let i = 0, l = children.length; i < l; i++) {
             let c = children[i];
-            this._dealDataToAllChildren(c, priority, data, async, taskTag, asyncLoadProgress, dealerKey);
+            this._dealDataToAllChildren(c, priority, data, async, taskTag, asyncLoadProgress, dealerKey, bundleName);
         }
     }
 
