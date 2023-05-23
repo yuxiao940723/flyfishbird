@@ -79,14 +79,10 @@ export default class DataDealer extends cc.Component {
         this.dataParent = dataParent;
         this.comDataParent = comDataParent;
 
-        this.addLoad('__AsyncLoad__');
         if (async) {
-            ffb.taskDispatcher.addTaskToPriorityQueens(this.dispatchPriority, taskTag, this.dealData, this).then(() => {
-                this.loadEnd('__AsyncLoad__');
-            });
+            ffb.taskDispatcher.addTaskToPriorityQueens(this.dispatchPriority, taskTag, this.dealData, this);
         } else {
             this._dealData();
-            this.loadEnd('__AsyncLoad__');
         }
     }
 
@@ -105,24 +101,6 @@ export default class DataDealer extends cc.Component {
         for (let i = 0; i < this.dataDefines.length; ++i) {
             let dataDefine = this.dataDefines[i];
             mutilpleDefineProperties.removeValueProps(dataDefine.data, Object.keys(dataDefine.props), this.node.name, dataDefine.compName, this.node.uuid);
-        }
-    }
-
-    addLoad(compName: string) {
-        if (!this.loadingType[compName]) {
-            this.loadingType[compName] = 0;
-        }
-        this.loadingType[compName]++;
-    }
-
-    loadEnd(compName: string) {
-        this.loadingType[compName]--;
-        if (this.loadingType[compName] === 0) {
-            delete this.loadingType[compName];
-        }
-        if (Object.keys(this.loadingType).length == 0 && this.loadEndCallback) {
-            this.loadEndCallback();
-            this.loadEndCallback = null;
         }
     }
 
