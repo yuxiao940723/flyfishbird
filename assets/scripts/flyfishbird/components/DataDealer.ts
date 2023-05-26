@@ -3,7 +3,7 @@ import MutilpleDefineProperties, { DefineProperties } from "../managers/Mutilple
 const { ccclass, disallowMultiple } = cc._decorator;
 const mutilpleDefineProperties = new MutilpleDefineProperties();
 
-interface DataDefines {
+interface DataDefine {
     data: Object;
     props: DefineProperties;
     compName: string;
@@ -54,7 +54,7 @@ export default class DataDealer extends cc.Component {
 
     loadingType = {};
 
-    dataDefines: DataDefines[] = null;
+    dataDefines: DataDefine[] = null;
 
     bundleName = undefined;
 
@@ -78,6 +78,10 @@ export default class DataDealer extends cc.Component {
 
         this.dataParent = dataParent;
         this.comDataParent = comDataParent;
+
+        if (nodeInLanguage) {
+            this.bindLanguage();
+        }
 
         if (async) {
             ffb.taskDispatcher.addTaskToPriorityQueens(this.dispatchPriority, taskTag, this.dealData, this);
@@ -175,7 +179,7 @@ export default class DataDealer extends cc.Component {
     private _dealDataWithDataParent(dataParent) {
         let data = dataParent[this.node.name];
         let dataType = typeof data;
-        let dataDefines: DataDefines[] = [];
+        let dataDefines: DataDefine[] = [];
         if (dataType === 'object') {
             for (const key in data) {
                 if (key === 'node') {
@@ -202,12 +206,12 @@ export default class DataDealer extends cc.Component {
                 }
             }
         } else {
-            let compDataDefines: DataDefines = { data: dataParent, props: {}, compName: '' };
+            let compDataDefines: DataDefine = { data: dataParent, props: {}, compName: '' };
             let keys = this.node.name.split('_');
             if (keys.indexOf('sprite') >= 0) {
                 let comp = this.node.getComponent(cc.Sprite);
                 compDataDefines.compName = 'cc.Sprite';
-                compDataDefines[this.node.name] = createDefineSetget({
+                compDataDefines.props[this.node.name] = createDefineSetget({
                     set: async (v) => {
                         let spriteFrame = await ffb.resManager.loadRes<cc.SpriteFrame>(v, this.bundleName);
                         if (!cc.isValid(comp)) {
@@ -222,15 +226,15 @@ export default class DataDealer extends cc.Component {
             } else if (keys.indexOf('progressBar') >= 0) {
                 let comp = this.node.getComponent(cc.ProgressBar);
                 compDataDefines.compName = 'cc.ProgressBar';
-                compDataDefines[this.node.name] = createDefineSetget({ data: { object: comp, key: 'progress' } });
+                compDataDefines.props[this.node.name] = createDefineSetget({ data: { object: comp, key: 'progress' } });
             } else if (keys.indexOf('button') >= 0) {
                 let comp = this.node.getComponent(cc.Button);
                 compDataDefines.compName = 'cc.Button';
-                compDataDefines[this.node.name] = createDefineSetget({ data: { object: comp, key: 'interactable' } });
+                compDataDefines.props[this.node.name] = createDefineSetget({ data: { object: comp, key: 'interactable' } });
             } else if (keys.indexOf('skeleton') >= 0) {
                 let comp = this.node.getComponent(sp.Skeleton);
                 compDataDefines.compName = 'sp.Skeleton';
-                compDataDefines[this.node.name] = createDefineSetget({
+                compDataDefines.props[this.node.name] = createDefineSetget({
                     set: async (v) => {
                         let skeletonData = await ffb.resManager.loadRes<sp.SkeletonData>(v, this.bundleName);
                         if (!cc.isValid(comp)) {
@@ -242,15 +246,15 @@ export default class DataDealer extends cc.Component {
             } else if (keys.indexOf('toggle') >= 0) {
                 let comp = this.node.getComponent(cc.Toggle);
                 compDataDefines.compName = 'cc.Toggle';
-                compDataDefines[this.node.name] = createDefineSetget({ data: { object: comp, key: 'isChecked' } });
+                compDataDefines.props[this.node.name] = createDefineSetget({ data: { object: comp, key: 'isChecked' } });
             } else if (keys.indexOf('slider') >= 0) {
                 let comp = this.node.getComponent(cc.Slider);
                 compDataDefines.compName = 'cc.Slider';
-                compDataDefines[this.node.name] = createDefineSetget({ data: { object: comp, key: 'progress' } });
+                compDataDefines.props[this.node.name] = createDefineSetget({ data: { object: comp, key: 'progress' } });
             } else if (keys.indexOf('richText') >= 0) {
                 let comp = this.node.getComponent(cc.RichText);
                 compDataDefines.compName = 'cc.RichText';
-                compDataDefines[this.node.name] = createDefineSetget({ data: { object: comp, key: 'string' } });
+                compDataDefines.props[this.node.name] = createDefineSetget({ data: { object: comp, key: 'string' } });
             } else {
                 console.error(this.node.name + '节点绑定的数据无法处理');
             }
@@ -260,7 +264,14 @@ export default class DataDealer extends cc.Component {
         }
         for (let i = 0; i < dataDefines.length; ++i) {
             let prop = dataDefines[i];
+            let values = {};
+            for (const key in prop.props) {
+                values[key] = prop.props[key];
+            }
             mutilpleDefineProperties.addValueProps(prop.data, prop.props, this.node.name, prop.compName, this.node.uuid);
+            for (const key in values) {
+                prop.data[key] = values[key];
+            }
         }
         this.dataDefines = dataDefines;
     }
