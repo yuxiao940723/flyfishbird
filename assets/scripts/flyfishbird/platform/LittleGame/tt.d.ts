@@ -1,0 +1,4 @@
+
+namespace tt {
+    function getLaunchOptionsSync();
+}

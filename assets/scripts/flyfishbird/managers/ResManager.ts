@@ -90,11 +90,11 @@ class ResManager {
     }
 
     loadAudio(audioName: string, bundleName: string) {
-        return this.loadResource<cc.AudioClip>(bundleName, 'audio', audioName);
+        return this.loadResource<cc.AudioClip>('audio', audioName, bundleName);
     }
 
     async loadAndInstantiatePrefab(prefabName: string, bundleName: string, isPreLoad?: boolean) {
-        let prefab: cc.Prefab = await this.loadResource(bundleName, 'prefab', prefabName, cc.Prefab, isPreLoad);
+        let prefab: cc.Prefab = await this.loadResource('prefab', prefabName, bundleName, cc.Prefab, isPreLoad);
         if (isPreLoad && !(prefab instanceof cc.Prefab)) {
             //预加载返回的是RequestItem[]，并不会返回cc.Prefab，因此需要重新加载一遍
             prefab = await this.loadResource(bundleName, 'prefab', prefabName, cc.Prefab, false);
@@ -103,15 +103,15 @@ class ResManager {
     }
 
     loadPrefab(prefabName: string, bundleName: string): Promise<cc.Prefab> {
-        return this.loadResource(bundleName, 'prefab', prefabName);
+        return this.loadResource('prefab', prefabName, bundleName);
     }
 
     loadRes<T extends cc.Asset>(filename: string, bundleName: string, type?: { prototype: T }) {
-        return this.loadResource<T>(bundleName, 'res', filename, type);
+        return this.loadResource<T>('res', filename, bundleName, type);
     }
 
     async loadSpriteFrameByAtlas(atlas: string, filename: string, bundleName: string) {
-        let spriteAtlas = await this.loadResource(bundleName, 'res', atlas, cc.SpriteAtlas);
+        let spriteAtlas = await this.loadResource('res', atlas, bundleName, cc.SpriteAtlas);
         if (!spriteAtlas) {
             return null;
         }

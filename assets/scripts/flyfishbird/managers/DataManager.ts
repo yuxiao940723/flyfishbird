@@ -5,6 +5,20 @@ class DataManager {
     commonData = {};
     nodeTaskTags = {};
 
+    registers: { [key: string]: { [key: string]: { set: ffb.AttrSetFun } } } = {};
+
+    registeAttributes(compName: string, attrName: string, set: ffb.AttrSetFun) {
+        let attributes = this.registers[compName]
+        if (!attributes) {
+            attributes = this.registers[compName] = {};
+        }
+        attributes[attrName] = { set: set };
+    }
+
+    getAttribute(compName: string, attrName: string,) {
+        return this.registers[compName][attrName];
+    }
+
     dealData(node: cc.Node, data: Object, priority: number, async: boolean, bundleName: string, dealerKey?: string) {
         if (!cc.isValid(node) || typeof data !== 'object') {
             return Promise.resolve();
@@ -12,24 +26,16 @@ class DataManager {
         let taskTag = 'DATA_MGR_PRIORITY_TAG_' + node.uuid;
         this.nodeTaskTags[node.uuid] = taskTag;
         return new Promise(async (resolve, reject) => {
-            let progress = {
-                count: 0,
-                complelteOnce: function () {
-                    this.count--;
-                    // console.log(node.name, 'total', this.count);
-                    if (this.count <= 0) {
-                        delete this.nodeTaskTags[node.uuid];
-                        resolve(null);
-                    }
-                }
-            }
-            progress.count++;
-            this._dealDataToAllChildren(node, priority, data, async, taskTag, progress, dealerKey, bundleName);
-            progress.complelteOnce();
+            let counter = new ffb.Tools.Counter(() => {
+                delete this.nodeTaskTags[node.uuid];
+                resolve(null);
+            });
+            this._dealDataToAllChildren(node, priority, data, async, taskTag, counter, dealerKey, bundleName);
+            counter.complelteOnce();
         });
     }
 
-    private _dealDataToAllChildren(node: cc.Node, priority: number, data, async: boolean, taskTag: string, asyncLoadProgress, dealerKey: string, bundleName: string) {
+    private _dealDataToAllChildren(node: cc.Node, priority: number, data, async: boolean, taskTag: string, counter: ffb.Tools.Counter, dealerKey: string, bundleName: string) {
         let nodeInData = node.name in data;
         let nodeInCommonData = node.name in this.commonData;
         let nodeInLanguage = ffb.langManager.containKey(node.name, bundleName);
@@ -38,17 +44,17 @@ class DataManager {
             if (!comp) {
                 comp = node.addComponent(DataDealer);
             }
-            asyncLoadProgress.count++;
+            counter.addCount();
             comp.dealData(data, this.commonData, nodeInLanguage, async, dealerKey, priority, taskTag, function () {
-                if (asyncLoadProgress) {
-                    asyncLoadProgress.complelteOnce();
+                if (counter) {
+                    counter.complelteOnce();
                 }
             }, bundleName);
         }
         let children = node.children;
         for (let i = 0, l = children.length; i < l; i++) {
             let c = children[i];
-            this._dealDataToAllChildren(c, priority, data, async, taskTag, asyncLoadProgress, dealerKey, bundleName);
+            this._dealDataToAllChildren(c, priority, data, async, taskTag, counter, dealerKey, bundleName);
         }
     }
 

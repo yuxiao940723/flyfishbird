@@ -4,11 +4,6 @@ namespace ffb {
     interface GameManager {
 
         /**
-         * 是否要等所有资源加载完毕后再显示layer
-         */
-        showLayerWhenAllResLoaded: boolean;
-
-        /**
          * 添加某个函数到cocos的update阶段执行
          * @param fun 要执行的函数，当前帧的所有update执行完了才会执行
          * @param frame 延迟执行的帧数。0为当前帧，1为下一帧，以此类推
@@ -56,14 +51,23 @@ namespace ffb {
         getLayerNames(): string[];
 
         /**
-         * 有数据绑定的节点都要通过此方法销毁。传父节点也行。
-         * 调用popLayer后不需要再调用此方法。
+         * 销毁节点（包括子节点），有数据绑定的节点必须要通过此方法销毁（通过popLayer移除的不需要再调用此方法）。
          * @param node 要销毁的节点
          */
         destroyNode(node: cc.Node);
     }
 
+    type AttrSetFun = (comp: cc.Component, value) => Promise<void>;
+
     interface DataManager {
+        /**
+         * 注册组件的属性修改时执行的方法。仅在有同步操作，需要等待操作完成（比如加载资源）的时候才需要注册。如果是异步，无需调用此方法，可以直接在set、get方法里面去完成操作。
+         * @param compName 组件名
+         * @param attrName 属性名
+         * @param set 方法
+         */
+        registeAttributes(compName: string, attrName: string, set: AttrSetFun);
+        getAttribute(compName: string, attrName: string): { set: AttrSetFun };
         dealData(node: cc.Node, data: Object, priority: number, async: boolean, bundleName: string, dealerKey?: string);
         changePriority(node: cc.Node, priority: number);
         destroyDealers(node: cc.Node);
@@ -199,6 +203,10 @@ namespace ffb {
     }
 
     interface LangManager {
+
+        //
+        UPDATE_LANGUAGE: string;
+
         /**
          * 所在的bundle的文本对象里面是否包含该key
          * @param key key
@@ -276,9 +284,21 @@ namespace ffb {
         changeQueenPriority(tag: string, newPriority: number, index?: number);
     }
 
-    let gameManager: GameManager;
-    let dataManager: DataManager;
-    let resManager: ResManager;
-    let langManager: LangManager;
-    let taskDispatcher: TaskDispatcher;
+    namespace Tools {
+        export class Counter {
+            constructor(complete: () => any);
+            addCount();
+            complelteOnce();
+        }
+    }
+
+    export let gameManager: GameManager;
+    export let dataManager: DataManager;
+    export let resManager: ResManager;
+    export let langManager: LangManager;
+    export let taskDispatcher: TaskDispatcher;
+
+    type OneParamFun = (value) => void;
 }
+
+

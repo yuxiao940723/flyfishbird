@@ -58,6 +58,8 @@ export default class DataDealer extends cc.Component {
 
     bundleName = undefined;
 
+    valueChangeComponent: (compName: string, value: any) => any = null;
+
     dealData(dataParent: Object, comDataParent: Object, nodeInLanguage: boolean, async: boolean, dealerKey: string, priority: number, taskTag: string, loadEndCallback: Function, bundle: string) {
         if (this.dataParent) {
             console.error('不能重复绑定节点的数据');
@@ -84,7 +86,7 @@ export default class DataDealer extends cc.Component {
         }
 
         if (async) {
-            ffb.taskDispatcher.addTaskToPriorityQueens(this.dispatchPriority, taskTag, this.dealData, this);
+            ffb.taskDispatcher.addTaskToPriorityQueens(this.dispatchPriority, taskTag, this._dealData, this);
         } else {
             this._dealData();
         }
@@ -165,21 +167,36 @@ export default class DataDealer extends cc.Component {
 
         this.dealDefineNode(this.dataParent, false);
 
+        let counter = new ffb.Tools.Counter(() => {
+            this.loadEndCallback && this.loadEndCallback();
+        });
+
         let contain = this.containBindData(this.dataParent);
         if (contain) {
-            this._dealDataWithDataParent(this.dataParent);
+            counter.addCount();
+            this._dealDataWithDataParent(this.dataParent, () => {
+                counter.complelteOnce();
+            });
         }
 
         contain = this.containBindData(this.comDataParent);
         if (contain) {
-            this._dealDataWithDataParent(this.comDataParent);
+            counter.addCount();
+            this._dealDataWithDataParent(this.comDataParent, () => {
+                counter.complelteOnce();
+            });
         }
+
+        counter.complelteOnce();
     }
 
-    private _dealDataWithDataParent(dataParent) {
+    private _dealDataWithDataParent(dataParent, loadEndCallback: Function) {
         let data = dataParent[this.node.name];
         let dataType = typeof data;
         let dataDefines: DataDefine[] = [];
+        let counter = new ffb.Tools.Counter(() => {
+            loadEndCallback && loadEndCallback();
+        });
         if (dataType === 'object') {
             for (const key in data) {
                 if (key === 'node') {
@@ -198,7 +215,22 @@ export default class DataDealer extends cc.Component {
                 let props: DefineProperties = {};
                 for (const name in compData) {
                     if (name in comp) {
-                        props[name] = createDefineSetget({ data: { object: compData, key: name } });
+                        if (typeof comp[name] === 'object') {
+                            let registeAttribute = ffb.dataManager.getAttributes(key, name);
+                            if (registeAttribute) {
+                                props[name] = createDefineSetget({
+                                    set: async (v: string) => {
+                                        counter.addCount();
+                                        registeAttribute.set(comp, v).then(() => {
+                                            counter.complelteOnce();
+                                            this.valueChangeComponent && this.valueChangeComponent('cc.Sprite', v);
+                                        });
+                                    }
+                                });
+                            }
+                        } else {
+                            props[name] = createDefineSetget({ data: { object: compData, key: name } });
+                        }
                     }
                 }
                 if (Object.keys(props).length > 0) {
@@ -212,12 +244,11 @@ export default class DataDealer extends cc.Component {
                 let comp = this.node.getComponent(cc.Sprite);
                 compDataDefines.compName = 'cc.Sprite';
                 compDataDefines.props[this.node.name] = createDefineSetget({
-                    set: async (v) => {
-                        let spriteFrame = await ffb.resManager.loadRes<cc.SpriteFrame>(v, this.bundleName);
-                        if (!cc.isValid(comp)) {
-                            return;
-                        }
-                        comp.spriteFrame = spriteFrame;
+                    set: (v: string) => {
+                        counter.addCount();
+                        setSpriteFrame(comp, v).then(() => {
+                            counter.complelteOnce();
+                        });
                     }
                 });
             } else if (keys.indexOf('label') >= 0) {
@@ -235,12 +266,11 @@ export default class DataDealer extends cc.Component {
                 let comp = this.node.getComponent(sp.Skeleton);
                 compDataDefines.compName = 'sp.Skeleton';
                 compDataDefines.props[this.node.name] = createDefineSetget({
-                    set: async (v) => {
-                        let skeletonData = await ffb.resManager.loadRes<sp.SkeletonData>(v, this.bundleName);
-                        if (!cc.isValid(comp)) {
-                            return;
-                        }
-                        comp.skeletonData = skeletonData;
+                    set: (v: string) => {
+                        counter.addCount();
+                        setSkeletonData(comp, v).then(() => {
+                            counter.complelteOnce();
+                        });
                     }
                 });
             } else if (keys.indexOf('toggle') >= 0) {
@@ -274,6 +304,29 @@ export default class DataDealer extends cc.Component {
             }
         }
         this.dataDefines = dataDefines;
+        counter.complelteOnce();
     }
+}
 
+async function setSpriteFrame(comp: cc.Sprite, sf: string) {
+    let spriteFrame = await ffb.resManager.loadRes<cc.SpriteFrame>(sf, this.bundleName);
+    if (!cc.isValid(comp)) {
+        return;
+    }
+    comp.spriteFrame = spriteFrame;
+}
+
+async function setSkeletonData(comp: sp.Skeleton, sd: string) {
+    let skeletonData = await ffb.resManager.loadRes<sp.SkeletonData>(sd, this.bundleName);
+    if (!cc.isValid(comp)) {
+        return;
+    }
+    comp.skeletonData = skeletonData;
+}
+
+if (!CC_EDITOR) {
+    cc.game.on(cc.game.EVENT_GAME_INITED, () => {
+        ffb.dataManager.registeAttributes('cc.Sprite', 'spriteFrame', setSpriteFrame);
+        ffb.dataManager.registeAttributes('sp.Skeleton', 'spriteFrame', setSkeletonData);
+    });
 }

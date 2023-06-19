@@ -3,7 +3,9 @@ cocos creator framework
 
 本框架将ui和data分离，data修改后ui自动同步。使程序更专注于游戏逻辑。
 
-1、目录分布
+1、目录设计
+
+assets下有scenes、scripts和多个bundle目录
 
 - resources： creator的默认bundle
     - scripts： 此bundle下的代码文件夹
@@ -11,16 +13,15 @@ cocos creator framework
 - bundle1： 自定义的bundle，与resources目录结构一样
 
 - scripts： 基础代码文件夹
+- scenes： 场景目录
+
+每个bundle下都要创建一个init文件，用来初始化bundle配置
 
 
 2、使用
-
-
-
-common data 上不能定义 node 属性（无法确定是哪个节点）
+common data 上不能定义 node 属性（因为common data 可能同时绑定多个节点）
 除common data 上对应节点外，其他不同模块节点名不要重复，否则将会无法修改。
 例如：
-
 {
     home:{
         money_Label:100,
@@ -32,7 +33,6 @@ common data 上不能定义 node 属性（无法确定是哪个节点）
 
 上面代码将会导致 shop 模块中的 money_Label 修改无效。
 如果两个money都是代表玩家的当前金币，建议移动到 common data 上
-
 {
     commom:{
         money_Label:100,
@@ -48,3 +48,4 @@ common data 上不能定义 node 属性（无法确定是哪个节点）
         sign_money_Label:100,
     }
 }
+

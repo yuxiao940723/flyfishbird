@@ -1,0 +1,6 @@
+
+namespace wx {
+
+    function getLaunchOptionsSync();
+    
+}

@@ -116,6 +116,8 @@ interface BundleSetter {
 // ${} 在data里面找变量      @{} 在语言文件里面找key
 class LangManager {
 
+    UPDATE_LANGUAGE = 'FFB_UPDATE_LANGUAGE';
+
     language: ffb.BundleLanguage = {};
     setters: BundleSetter = {};
 
@@ -129,7 +131,7 @@ class LangManager {
 
     containKey(key: string, bundleName: string) {
         const element = this.language[bundleName];
-        return key in element;
+        return element && key in element;
     }
 
     unBindLanguage(comp: ffb.LabelLike) {

@@ -1,0 +1,6 @@
+
+namespace qq {
+
+    function getLaunchOptionsSync();
+
+}

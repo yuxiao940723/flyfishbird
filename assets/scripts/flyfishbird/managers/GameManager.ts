@@ -19,8 +19,6 @@ class GameManager {
 
     staticBackground = true;
 
-    showLayerWhenAllResLoaded = false;
-
     private updateFuns: UpdateFun[] = [];
     private layers: cc.Node[] = [];
 
@@ -83,9 +81,7 @@ class GameManager {
                 node.parent = cc.find('Canvas');
                 node.active = false;
 
-                if (this.showLayerWhenAllResLoaded) {
-                    await this.makeSureRefResourcesLoaded(node);
-                }
+                await this.makeSureRefResourcesLoaded(node);
 
                 if (loading.isPreload) {
                     await ffb.dataManager.dealData(node, data, DEFAULT_PRIORITY - 1, true, bundle);
@@ -122,20 +118,16 @@ class GameManager {
                     pageview['update'](1);
                 }
             }
-            let loadCount = 1;
-            let loadEnd = () => {
-                loadCount--;
-                if (loadCount <= 0) {
-                    resolve(null);
-                }
-            }
+            let counter = new ffb.Tools.Counter(()=>{
+                resolve(null);
+            });
             let sprites = node.getComponentsInChildren(cc.Sprite);
             for (let i = 0; i < sprites.length; ++i) {
                 let sp = sprites[i];
                 if (sp.spriteFrame) {
-                    loadCount++;
+                    counter.addCount();
                     sp.spriteFrame['onTextureLoaded'](function () {
-                        loadEnd();
+                        counter.complelteOnce();
                     });
                 }
             }
@@ -143,29 +135,20 @@ class GameManager {
             for (let i = 0; i < labels.length; ++i) {
                 let label = labels[i];
                 if (label.font instanceof cc.BitmapFont) {
-                    loadCount++;
+                    counter.addCount();
                     label.font['spriteFrame'].onTextureLoaded(function () {
-                        loadEnd();
+                        counter.complelteOnce();
                     });
-                }
-            }
-            let toggles = node.getComponentsInChildren(cc.Toggle);
-            for (let i = 0; i < toggles.length; ++i) {
-                let toggle = toggles[i];
-                if (toggle.isChecked) {
-                    toggle.check();
-                } else {
-                    toggle.uncheck();
                 }
             }
             node.active = false;        //设置为false，让组件暂停运行
             node.active = active;       //恢复之前的状态
-            loadEnd();
+            counter.complelteOnce();
         });
     }
 
     private async initLayer(layer: cc.Node) {
-
+        
     }
 
     addToAfterUpdate(fun: Function, frame: number = 0) {
