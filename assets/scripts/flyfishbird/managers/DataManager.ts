@@ -2,7 +2,6 @@ import DataDealer from "../components/DataDealer";
 
 class DataManager {
 
-    commonData = {};
     nodeTaskTags = {};
 
     registers: { [key: string]: { [key: string]: { set: ffb.AttrSetFun } } } = {};
@@ -36,20 +35,26 @@ class DataManager {
     }
 
     private _dealDataToAllChildren(node: cc.Node, priority: number, data, async: boolean, taskTag: string, counter: ffb.Tools.Counter, dealerKey: string, bundleName: string) {
-        let nodeInData = node.name in data;
-        let nodeInCommonData = node.name in this.commonData;
-        let nodeInLanguage = ffb.langManager.containKey(node.name, bundleName);
-        if (nodeInData || nodeInCommonData || nodeInLanguage) {
-            let comp = node.getComponent(DataDealer);
-            if (!comp) {
-                comp = node.addComponent(DataDealer);
+        let nodeInData = false;
+        let dataParent = null;
+        for (const key in data) {
+            dataParent = data[key];
+            if (node.name in dataParent) {
+                nodeInData = true;
+                break;
             }
-            counter.addCount();
-            comp.dealData(data, this.commonData, nodeInLanguage, async, dealerKey, priority, taskTag, function () {
-                if (counter) {
+        }
+        let nodeInLanguage = ffb.langManager.containKey(node.name, bundleName);
+        if (nodeInData || nodeInLanguage) {
+            if (CC_DEBUG && node.getComponent(DataDealer)) {
+                console.error('DataDealer 组件已存在');
+            } else {
+                let comp = node.addComponent(DataDealer);
+                counter.addCount();
+                comp.dealData(data, nodeInLanguage, async, dealerKey, priority, taskTag, bundleName).then(() => {
                     counter.complelteOnce();
-                }
-            }, bundleName);
+                });
+            }
         }
         let children = node.children;
         for (let i = 0, l = children.length; i < l; i++) {

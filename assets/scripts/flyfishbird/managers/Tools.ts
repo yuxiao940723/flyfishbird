@@ -14,7 +14,6 @@ class Counter {
 
     complelteOnce () {
         this.count--;
-        // console.log(node.name, 'total', this.count);
         if (this.count <= 0 && this.complete) {
             this.complete();
             this.complete = null;
